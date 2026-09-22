@@ -1,0 +1,33 @@
+node_modules/
+dist/
+dist-server/
+coverage/
+*.local
+*.tsbuildinfo
+.DS_Store
+
+# IDE & editor config
+.commandcode/
+.vscode/
+.idea/
+
+# Env files (may contain secrets)
+.env
+.env.local
+.env.*.local
+
+# Debug & log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Vite cache
+.vite/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
