@@ -4,11 +4,11 @@ import re
 import time
 
 from fastapi import APIRouter, HTTPException
-
+from pathlib import Path
 from ..lib.doctext import as_note_doc
 from ..seed import new_id
 from ..store import NOTE_ID_RE, FsStore
-
+import uuid
 COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -124,5 +124,68 @@ def create_notes_api(store: FsStore) -> APIRouter:
         index = read_index()
         write_index({"notes": [n for n in index["notes"] if n["id"] != id]})
         return {"ok": True}
+
+    def session_file(session_id: str) -> Path:
+            return store.sessions_dir / f"{session_id}.json"
+    
+    def read_sessions_index() -> dict:
+            return store.read_json(store.sessions_index_file, {"sessions": []})
+
+    def write_sessions_index(index: dict) -> None:
+            store.write_json(store.sessions_index_file, index)
+
+    @router.get("/{note_id}/sessions")
+    async def list_note_sessions(note_id: str):
+        if not NOTE_ID_RE.match(note_id):
+            raise HTTPException(400, "Invalid note id")
+        note = read_note(note_id)
+        if not note:
+            raise HTTPException(404, "Note not found")
+        index = read_sessions_index()
+        sessions = [s for s in index["sessions"] if s["noteId"] == note_id]
+        # Sort by updatedAt desc — frontend auto-selects the most recent
+        sessions.sort(key=lambda s: s.get("updatedAt", 0), reverse=True)
+        return {"sessions": sessions}
+
+    @router.post("/{note_id}/sessions")
+    async def create_note_session(note_id: str):
+        if not NOTE_ID_RE.match(note_id):
+            raise HTTPException(400, "Invalid note id")
+        note = read_note(note_id)
+        if not note:
+            raise HTTPException(404, "Note not found")
+
+        now = int(time.time() * 1000)
+        session_id = str(uuid.uuid4())
+        session = {
+            "id": session_id,
+            "noteId": note_id,
+            "title": "New chat",
+            "createdAt": now,
+            "updatedAt": now,
+            "messages": [],
+        }
+        store.write_json(session_file(session_id), session)
+
+        index = read_sessions_index()
+        index["sessions"].append({
+            "id": session_id,
+            "noteId": note_id,
+            "title": "New chat",
+            "createdAt": now,
+            "updatedAt": now,
+        })
+        write_sessions_index(index)
+
+        return session
+
+    
+
+    
+
+    
+
+
+    
 
     return router

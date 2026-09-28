@@ -12,21 +12,25 @@ IMAGE_NAME_RE = re.compile(
     r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,80}\.(png|jpe?g|gif|webp|svg|bmp|avif)$", re.IGNORECASE
 )
 MAX_IMAGE_BYTES = 25 * 1024 * 1024
-
+SESSION_ID_RE = re.compile(r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
 
 class FsStore:
     def __init__(self, root: str | Path):
         self.root = Path(root)
         self.notes_dir = self.root / "notes"
         self.images_dir = self.root / "images"
+        self.sessions_dir = self.root / "sessions"
         self.index_file = self.root / "notes.json"
         self.prefs_file = self.root / "prefs.json"
         self.chat_file = self.root / "chat.json"
         self.folders_file = self.root / "folders.json"
+        self.sessions_index_file = self.root / "sessions.json"
+
 
     def init(self) -> None:
         self.notes_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
+        self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
     def note_file(self, id: str) -> Path:
         return self.notes_dir / f"{id}.json"
